@@ -25,4 +25,13 @@ class CustomerFeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerFeedback
         fields = ['id', 'product', 'user', 'comment', 'rating', 'created_at']
+
+from rest_framework import serializers
+from .models import Wishlist
+
+class WishlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'user', 'product', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']        
       
