@@ -11,15 +11,35 @@ from rest_framework.decorators import action
 from .models import Wishlist
 from .serializers import WishlistSerializer
 
-
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+from django.core.cache import cache
+from products.tasks import update_product_cache
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+    def get_queryset(self):
+        cache_key = "category_list"
+        categories = cache.get(cache_key)
+
+        if not categories:
+            categories = Category.objects.all()
+            cache.set(cache_key, categories, timeout=60 * 5)  # ۵ دقیقه
+
+        return categories
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        cache.delete("category_list")  # حذف کش بعد از ایجاد
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        cache.delete("category_list")  # حذف کش بعد از بروزرسانی
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        cache.delete("category_list")  # حذف کش بعد از حذف
+
+    
 class BrandViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
